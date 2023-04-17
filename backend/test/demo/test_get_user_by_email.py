@@ -59,7 +59,7 @@ def test_get_user_by_email_multiple_users():
     dao_mock.find.assert_called_with({'email': email})
 
 def test_get_user_by_email_database_exception():
-    """Test if get_user_by_email raises an exception when an exception is raised in the database layer."""
+    """Test if get_user_by_email raises an exception when an exception is raised in the database layer.""" 
     # arrange
     dao_mock = MagicMock()
     dao_mock.find.side_effect = Exception()
