@@ -2,11 +2,11 @@ import pytest
 from bson import ObjectId
 from pymongo.errors import WriteError
 from src.util.dao import DAO
+
 from unittest.mock import MagicMock
 from mongomock import MongoClient
 from datetime import datetime, timedelta
 from bson import ObjectId
-import pymongo
 
 
 
@@ -19,20 +19,21 @@ def mongo_client():
 
 
 def test_create_noncompliant_data(mongo_client):
-    dao = DAO('user')
+    dao = DAO('video')
     data = {
-        'title': 'Complete project',
-        'description': 'Finish project before deadline',
-        'startdate': datetime.utcnow(),
-        'duedate': datetime.utcnow() + timedelta(days=7),
-        'requires': [ObjectId('6150f0a26b29d7aa2c2b8657'), ObjectId('6150f0a26b29d7aa2c2b8658')],
-        'categories': ['work', 'programming'],
-        'todos': [ObjectId('6150f0a26b29d7aa2c2b8659'), ObjectId('6150f0a26b29d7aa2c2b865a')],
-        'video': ObjectId('6150f0a26b29d7aa2c2b865b')
+        'firstName': 'John',
+        'lastName': 'Doe',
+        'email': 309473,
+        'tasks': '["email": 456645',
+        'banana':{
+            'firstName': 'John',
+            'lastName': 'Doe',
+        }
+
     }
 
     with pytest.raises(WriteError):
-        print(dao.create(data))
+        dao.create(data)
 
 def test_create_task_compliant_data(mongo_client):
     dao = DAO('task')
