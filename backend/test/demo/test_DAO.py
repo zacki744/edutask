@@ -176,22 +176,3 @@ def test_delete_user(mongo_client):
     result1 = dao.findOne(user_id['$oid'])
     assert result1 is None
     assert result == 1
-
-
-def test_clean(mongo_client):
-    dao = DAO('task')
-    dao1 = DAO('todo')
-    dao2 = DAO('user')
-    dao3 = DAO('video')
-    
-    try:
-        for r in dao1.find():
-            dao1.delete(r['_id']['$oid'])
-        for r in dao2.find():
-            dao2.delete(r['_id']['$oid'])
-        for r in dao3.find():
-            dao3.delete(r['_id']['$oid'])
-        for r in dao.find():
-            dao.delete(r['_id']['$oid'])
-    except:
-        pass
