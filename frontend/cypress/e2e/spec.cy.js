@@ -1,11 +1,11 @@
-describe('Open the login page', () => {
-  //fixtures
-  let uid
-  let name
+describe('Logging into the system', () => {
+  // define variables that we need on multiple occasions
+  let uid // user id
+  let name // name of the user (firstName + ' ' + lastName)
+  let email // email of the user
 
-  beforeEach(() => {
-  
-    //create fabricated user from fixture
+  before(function () {
+    // create a fabricated user from a fixture
     cy.fixture('user.json')
       .then((user) => {
         cy.request({
@@ -14,38 +14,49 @@ describe('Open the login page', () => {
           form: true,
           body: user
         }).then((response) => {
-            uid = response.body._id.$oid
-            name = user.firstName + ' ' + user.lastName
-          })
+          uid = response.body._id.$oid
+          name = user.firstName + ' ' + user.lastName
+          email = user.email
         })
+      })
   })
 
-  beforeEach(() => {
-    cy.visit('http://localhost:5000/login')
+  beforeEach(function () {
+    // enter the main main page
+    cy.visit('http://localhost:3000')
   })
 
-  //test case 1: open loginpage
-  it('start out on the landing screen', () => {
-
-    cy.get('h1').should('contain', 'Login')
+  it('starting out on the landing screen', () => {
+    // make sure the landing page contains a header with "login"
+    cy.get('h1')
+      .should('contain.text', 'Login')
   })
 
-  //test case 2: login with correct credentials
+  it('login to the system with an existing account', () => {
+    // detect a div which contains "Email Address", find the input and type (in a declarative way)
+    cy.contains('div', 'Email Address')
+      .find('input[type=text]')
+      .type(email)
+    // alternative, imperative way of detecting that input field
+    //cy.get('.inputwrapper #email')
+    //    .type(email)
 
-  it('login with correct credentials', () => {
-    cy.get('.inputwrapper #email').should('be.enabled')
-    cy.get('.inputwrapper #password').should('be.disabled')
+    // submit the form on this page
+    cy.get('form')
+      .submit()
+
+    // assert that the user is now logged in
+    cy.get('h1')
+      .should('contain.text', 'Your tasks, ' + name)
   })
 
-  /*
-  //clean up after test
-  afterEach(() => {
+  after(function () {
+    // clean up by deleting the user from the database
     cy.request({
       method: 'DELETE',
-      url: 'http://localhost:3000/user/' + uid,
+      url: `http://localhost:5000/users/${uid}`
     }).then((response) => {
       cy.log(response.body)
     })
   })
-  */
 })
