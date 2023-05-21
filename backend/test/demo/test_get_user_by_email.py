@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import MagicMock
 from src.controllers.usercontroller import UserController
 
+
 def test_get_user_by_email_valid_exists():
     """Test if get_user_by_email returns a valid user that exists in the database."""
     # arrange
@@ -91,21 +92,6 @@ def test_get_user_by_email_white_space_creation():
     # assert
     assert user == {"email": " test@example.com ", "name": "Test User 1"}
 
-
-def test_get_user_by_email_special_charecters():
-    """Test if get_user_by_email returns user when special charekters is used in the search and creation."""
-    # arrange
-    dao_mock = MagicMock()
-    dao_mock.find.return_value = [{"email": "!#$%&'*+-/=?^_`{|}~@*+-/=?^{|}~.com", "name": "Test User 1"}]
-    user_controller = UserController(dao=dao_mock)
-    email = "!#$%&'*+-/=?^_`{|}~@*+-/=?^{|}~.com"
-
-    # act
-    user = user_controller.get_user_by_email(email)
-    
-    # assert
-    assert user == {"email": "!#$%&'*+-/=?^_`{|}~@*+-/=?^{|}~.com", "name": "Test User 1"}
-
       
 def test_get_user_by_email_number_serch():
     """Test if get_user_by_email returns TypeError when non string is used in the search."""
@@ -160,3 +146,16 @@ def test_get_user_by_eamail_non_ASCII_charekters():
     # assert
     assert user == {"email": email, "name": "Test User 1"}
 
+def test_get_user_by_email_special_charecters_long():
+    """Test if get_user_by_email returns user when special charekters is used in the search and creation."""
+    # arrange
+    dao_mock = MagicMock()
+    dao_mock.find.return_value = [{"email": "!#$%&'*+-/=?^_`{|}~@*+-/=?^{|}~.com", "name": "Test User 1"}]
+    user_controller = UserController(dao=dao_mock)
+    email = "!#$%&'*+-/=?^_`{|}~@*+-/=?^{|}~.com"
+
+    # act
+    user = user_controller.get_user_by_email(email)
+    
+    # assert
+    assert user == {"email": "!#$%&'*+-/=?^_`{|}~@*+-/=?^{|}~.com", "name": "Test User 1"}
