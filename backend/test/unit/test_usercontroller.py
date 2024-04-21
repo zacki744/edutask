@@ -1,10 +1,9 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import patch, MagicMock
 from src.controllers.usercontroller import UserController
 
 class TestUserController:
-
-    # Fixture for creating a UserController instance with a mocked DAO
+    # Fixture for one user
     @pytest.fixture
     def sut_one_user(self):
         returnVal = {
@@ -34,42 +33,60 @@ class TestUserController:
         dao = MagicMock()
         dao.find.return_value = returnVal
         return UserController(dao)
-
+    
+    # Fixture for the system under test (SUT).
     @pytest.fixture
     def sut(self):
         dao = MagicMock()
         mockres = UserController(dao=dao)
         return mockres
+    
+    @pytest.fixture
+    def sut_no_user(self):
+        dao = MagicMock()
+        dao.find.return_value = []
+        return UserController(dao)
 
-    # Test case for a valid email
+    @pytest.fixture
+    def sut_exception(self):
+        dao = MagicMock()
+        dao.find.side_effect = Exception('Mocked exception')
+        return UserController(dao)
+    
     @pytest.mark.unit
-    def test_validate_email_valid_email(self, sut_one_user):
+    def test_get_user_by_email_valid_email(self, sut_one_user):
         email = 'john.doe@example.com'
-        
         assert sut_one_user.get_user_by_email(email) == {'firstName': 'John', 'lastName': 'Doe', 'email': 'john.doe@example.com'}
         
-    # Test case for an multiple user with same email, shuld return only one user
     @pytest.mark.unit
-    def test_email_multiple(self, sut_multiple_users):
+    def test_get_user_by_email_multiple(self, sut_multiple_users):
         email = 'john123@example.com'
         assert sut_multiple_users.get_user_by_email(email) == {'firstName': 'John', 'lastName': 'Doe', 'email': 'john123@example.com'}
 
-    # Test case for an invalid email
-    invalid_email_1 = 'jane.doeemail.com'
-    invalid_email_2 = '.com'
-    invalid_email_3 = 'this_is_not_an_email'
-    invalid_email_4 = 'jane.doeemail'
-    invalid_email_5 = ''
-
     @pytest.mark.unit
     @pytest.mark.parametrize('invalid_email',
-                            [
-                                (invalid_email_1),
-                                (invalid_email_2),
-                                (invalid_email_3),
-                                (invalid_email_4),
-                                (invalid_email_5),
-                            ])
+        [
+            ('janedoeemail.com'),
+            ('.com'),
+            ('invallid'),
+            ('jane.doeemail'),
+            (''),
+        ])
     def test_get_user_by_email_invalid(self, sut, invalid_email):
-            with pytest.raises(ValueError):
-                sut.get_user_by_email(email = invalid_email)
+        with pytest.raises(ValueError), patch('src.controllers.usercontroller.re.fullmatch') as mock_re:
+            mock_re.return_value = False
+            sut.get_user_by_email(email = invalid_email)
+
+
+    @pytest.mark.unit
+    def test_get_user_by_email_no_user(self, sut_no_user):
+        email = 'nonexistent@example.com'
+
+        with pytest.raises(IndexError), patch('src.controllers.usercontroller.re.fullmatch') as mock_re:
+            mock_re.return_value = True
+            sut_no_user.get_user_by_email(email)
+    
+    @pytest.mark.unit
+    def test_database_error(self, sut_exception):
+        with pytest.raises(Exception):
+            sut_exception.get_user_by_email('anything@anything.com') # This should raise an exception because of the mocked exception
