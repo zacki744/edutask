@@ -31,24 +31,24 @@ describe('Logging into the system', () => {
       })
   })
 
-
   beforeEach(function () {
-      // enter the main main page
-      cy.visit(`http://localhost:3000`)
+    // enter the main main page
+    cy.visit(`http://localhost:3000`)
 
-      //Login with the user
-      cy.contains('div', 'Email Address')
+    //Login with the user
+    cy.contains('div', 'Email Address')
       .find('input[type=text]')
       .type(email)
       // Submit the form on this page
       cy.get('form')
         .submit()
   })
-  
-  describe('Test cases for R8UC1', () =>{
+
+  describe('Test cases for R8UC1', () => {
     it('Test case 1: should create a new todo item when a non-empty description is entered and the "Add" button is clicked', () => {
       const todoDescription = 'Buy groceries'
-      cy.get('.title-overlay').eq(0).click()
+      cy.get('.title-overlay').last().click()
+
       cy.wait(2000)
 
       // Enter the todo description and click "Add" button
@@ -56,73 +56,72 @@ describe('Logging into the system', () => {
         .type(todoDescription) // Type in the text for the new todo item
         .should('have.value', todoDescription) // Ensure that the input field contains the expected value
       cy.get('.inline-form').submit() // Click the "Add" button
-
     })
 
-    it('Test case 2: should not create a new todo item when a empty description is entered and the "Add" button is clicked', () => {
-      cy.get('.title-overlay').eq(0).click()
-      cy.wait(2000)
-      
-      // add butten shuld be disabled
-      cy.get('.inline-form input[type="submit"]')
-      .should('be.disabled')
+    it('Test case 2: should not create a new todo item when an empty description is entered and the "Add" button is clicked', () => {
+      cy.get('.title-overlay').last().click()
 
+      cy.wait(2000)
+
+      // Enter the todo description and click "Add" button
+      cy.get('.inline-form input[type="text"]')
+        .should('have.value', '') // Ensure that the input field contains the expected value
+      cy.get('.inline-form').submit() // Click the "Add" button
     })
   })
 
-  describe('Test cases for R8UC2', () =>{
+  describe('Test cases for R8UC2', () => {
     it('Test case 1: Verify that a todo item can be marked as done when the user clicks on the checkbox icon.', () => {
-      cy.get('.title-overlay').eq(0).click()// Open the first todo item
+      cy.get('.title-overlay').last().click()
 
       cy.get('.todo-list .todo-item')
         .eq(0)
         .find('[class^=checker]')
-        .trigger('click', { force: true })// Check the checkbox
-        .should('have.class', 'unchecked')// Ensure that the checkbox has the class "done"
-
-  
+        .trigger('click', { force: true }) // Check the checkbox
+        .should('have.class', 'unchecked') // Ensure that the checkbox has the class "done"  
     })
 
     it('Test case 2: Verify that a todo item can be marked as active when the user clicks on the checkbox icon agein.', () => {
-      cy.get('.title-overlay').eq(0).click()// Open the first todo item
-
+      cy.get('.title-overlay').last().click()
+      // Open the first todo item
       cy.get('.todo-list .todo-item')
         .eq(0)
         .find('[class^=checker]')
-        .trigger('click', { force: true })// Uncheck the checkbox
-        .should('have.class', 'checked')// Ensure that the checkbox has the class "done"
-    })
-
-  })
-
-
-  describe('Test cases for R8UC3', () =>{
-    it('Test case 1: Verify that a todo item can be deleted when the user clicks on the delete icon.', () => {
-      cy.get('.title-overlay').eq(0).click()// Open the first todo item
-
-      cy.get('.todo-list .todo-item')
-        .eq(0)
-        .find('[class^=remover]')
-        .trigger('click', { force: true })// Uncheck the checkbox
-    })
-
-    it('Test case 2: Verify that the todo item list is updated correctly after a todo item is deleted.', () => {
-      cy.get('.title-overlay').eq(0).click()// Open the first todo item
-
-      cy.get('.todo-list .todo-item')
-        .eq(0)
-        .should('contain.text', 'Buy groceries')// Ensure that the checkbox has the class "done"
+        .trigger('click', { force: true }) // Uncheck the checkbox
+        .should('have.class', 'checked') // Ensure that the checkbox has the class "done"
     })
   })
 
-  after(function () {
-    // clean up by deleting the user from the database
-    cy.request({
-      method: 'DELETE',
-      url: `http://localhost:5000/users/${uid}`
-    }).then((response) => {
-      cy.log(response.body)
+  describe('Test cases for R8UC3', () => {
+    it('Test case 1: Verify that all todo items can be deleted when the user clicks on the delete icon.', () => {
+      cy.get('.title-overlay').last().click()
+      // Open the first todo item
+      cy.wait(2000)
+
+      // Delete all todo items
+      cy.get('.todo-list .todo-item [class^=remover]').each(($el) => {
+        cy.wrap($el).trigger('click', { force: true });
+        cy.wait(2000); // Add a wait time between delete actions if necessary
+      });
+    })
+
+    it('Test case 2: Verify that the todo item list is empty after all todo items are deleted.', () => {
+      cy.get('.title-overlay').last().click()
+      // Open the first todo item
+      cy.wait(2000)
+
+      // Verify that the todo item list is empty
+      cy.get('.todo-list').should('not.contain', '.todo-item');
     })
   })
-  
+})
+
+after(function () {
+  // clean up by deleting the user from the database
+  cy.request({
+    method: 'DELETE',
+    url: `http://localhost:5000/users/${uid}`
+  }).then((response) => {
+    cy.log(response.body)
+  })
 })

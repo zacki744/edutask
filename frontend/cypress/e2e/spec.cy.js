@@ -52,6 +52,7 @@ describe('Logging into the system', () => {
 
   after(function () {
     // clean up by deleting the user from the database
+
     cy.request({
       method: 'DELETE',
       url: `http://localhost:5000/users/${uid}`
