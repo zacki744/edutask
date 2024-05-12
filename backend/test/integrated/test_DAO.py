@@ -140,3 +140,4 @@ class TestIntegrated:
         result = sut.create(user)
         result.pop('_id')
         assert result == user
+
