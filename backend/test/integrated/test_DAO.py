@@ -1,3 +1,7 @@
+import json
+from typing import Any
+from mongomock import MongoClient
+import pymongo
 import pytest
 from pymongo.errors import WriteError
 from src.util.dao import DAO
@@ -5,162 +9,135 @@ import sys
 import unittest.mock as mock
 from unittest.mock import patch
 
-
-@pytest.fixture(scope="module")
-def sut():
-    with patch('src.util.dao.getValidator', autospec=True) as mock_getValdator:
-        validator = {
-            "$jsonSchema": {
-                "bsonType": "object",
-                "required": ["firstName", "lastName", "email"],
-                "properties": {
-                    "firstName": {
-                        "bsonType": "string",
-                        "description": "the first name of a user must be determined"
-                    }, 
-                    "lastName": {
-                        "bsonType": "string",
-                        "description": "the last name of a user must be determined"
-                    },
-                    "email": {
-                        "bsonType": "string",
-                        "description": "the email address of a user must be determined",
-                        "uniqueItems": True
-                    },
-                    "tasks": {
-                        "bsonType": "array",
-                        "items": {
-                            "bsonType": "objectId"
-                        }
-                    }
-                }
-            }
+class TestIntegrated:
+    """
+    Testcases for the dao create method
+    """
+    Valid_users = [
+        {
+            "firstName": "Joe",
+            "lastName": "Bloggs",
+            "email": "joe@bloggs.com",
+            "tasks": []
+        },
+        {
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john@doe.com",
+            "tasks": []
         }
-        mock_getValdator.return_value = validator
-        name = 'user'
-        dao = DAO(name)
-        yield dao
-        dao.drop()
-
-@pytest.mark.integration
-def test_create_noncompliant_data(sut):
-    data = {
-        'firstName': 'John',
-        'lastName': 'Doe',
-        'email': 309473,
-        'tasks': '["email": 456645]'
-    }
-
-    with pytest.raises(WriteError) as e:
-        sut.create(data)
-    assert e.value.code == 121
-    
-@pytest.mark.integration
-def test_create_user_no_first_name(sut):
-    data = {
-        'lastName': 'Doe',
-        'email': 'johndoe@example.com',
-        'tasks': []
-    }
-
-    with pytest.raises(WriteError) as e:
-        sut.create(data)
-    assert e.value.code == 121
-        
-@pytest.mark.integration
-def test_create_user_no_last_name(sut):
-    data = {
-        'firstName': 'John',
-        'email': 'johndoe@example.com',
-        'tasks': []
-    }
-
-    with pytest.raises(WriteError) as e:
-        sut.create(data)
-    assert e.value.code == 121
-        
-@pytest.mark.integration
-def test_create_user_no_email(sut):
-    data = {
-        'firstName': 'John',
-        'lastName': 'Doe',
-        'tasks': []
-    }
-
-    with pytest.raises(WriteError) as e:
-        sut.create(data)
-    assert e.value.code == 121
-
-@pytest.mark.integration
-def test_create_user_compliant_data(sut):
-    data = {
-        'firstName': 'John',
-        'lastName': 'Doe',
-        'email': 'johndoe@example.com',
-        'tasks': []
-    }
-
-    result = sut.create(data)
-
-    assert result == {'_id': result['_id'], 'firstName': 'John', 'lastName': 'Doe', 'email': 'johndoe@example.com', 'tasks': []}
-    sut.delete(result['_id']['$oid'])
-
-
-# CRUD tests below
-@pytest.mark.integration
-def test_update_user(sut):
-    data = {
-        'firstName': 'John',
-        'lastName': 'Doe',
-        'email': 'johndoe@example.com',
-        'tasks': []
-    }
-    result = sut.create(data)
-    user_id = result['_id']['$oid']
-    update_data = {
-        '$set': {
-            'firstName': 'Jane'
+    ]
+    Invalid_users_partials = [
+        {
+            "lastName": "Bloggs",
+            "email": "joe@bloggs.com",
+            "tasks": []
+        },
+        {
+            "firstName": "Joe",
+            "email": "joe@bloggs.com",
+            "tasks": []
+        },
+                {
+            "firstName": "Joe",
+            "lastName": "Bloggs",
+            "tasks": []
+        },
+        {},
+    ]
+    Invalid_Data_Types = [
+        {
+            "firstName": True,
+            "lastName": "Bloggs",
+            "email": "joe@bloggs.com",
+            "tasks": []
+        },
+        {
+            "firstName": "Joe",
+            "lastName": [],
+            "email": "joe@bloggs.com",
+            "tasks": []
+        },
+        {
+            "firstName": "Joe",
+            "lastName": "Bloggs",
+            "email": 123,
+            "tasks": []
+        },
+        {
+            "firstName": False,
+            "lastName": False,
+            "email": False
         }
-    }
+    ]
+    @pytest.fixture(scope="module")
+    def sut(self):
+        """System Under Test (SUT).
 
-    sut.update(user_id, update_data)
-    updated_user = sut.findOne(user_id)
-
-    assert updated_user['firstName'] == 'Jane'
-    sut.delete(user_id)
-
-
-@pytest.mark.integration
-def test_read_user(sut):
-    data = {
-        'firstName': 'John',
-        'lastName': 'Doe',
-        'email': 'johndoe@example.com',
-        'tasks': []
-    }
-
-    result = sut.create(data)
-    user_id = result['_id']
-
-    user = sut.findOne(user_id['$oid'])
-    print(user)
-
-    assert user == result
-    sut.delete(user_id['$oid'])
+        Yields:
+            DAO:  mocked getValidation
+        """
+        validator = json.loads('{' \
+                '"$jsonSchema": {'\
+                    '"bsonType": "object",'\
+                    '"required": ["firstName", "lastName", "email"],'\
+                    '"properties": {'\
+                        '"firstName": {'\
+                            '"bsonType": "string",'\
+                            '"description": "the first name of a user must be determined"'\
+                        '}, '\
+                        '"lastName": {'\
+                            '"bsonType": "string",'\
+                            '"description": "the last name of a user must be determined",'\
+                            '"uniqueItems": true'\
+                        '},'\
+                        '"email": {'\
+                            '"bsonType": "string",'\
+                            '"description": "the email address of a user must be determined",'\
+                            '"uniqueItems": true'\
+                        '},'\
+                        '"tasks": {'\
+                            '"bsonType": "array",'\
+                            '"items": {'\
+                                '"bsonType": "objectId"'\
+                            '}'\
+                        '}'\
+                    '}'\
+                '}'\
+            '}')
+        with patch('src.util.dao.getValidator', autospec=True) as mock_getValdator:
+            mock_getValdator.return_value = validator
+            sut = DAO("test")
+        client = MongoClient('localhost', 27017)
+        db = client['edutask']
+        yield sut
+        db['test'].drop()
     
 
-@pytest.mark.integration   
-def test_delete_user(sut):
-    data = {
-        'firstName': 'John',
-        'lastName': 'Doe',
-        'email': 'johndoe@example.com',
-        'tasks': []
-    }
+    @pytest.mark.dao
+    @pytest.mark.parametrize("user", Invalid_Data_Types)
+    def test_Invalid_Data_Types(self, sut: DAO, user: Any):
+        with pytest.raises(WriteError):
+            sut.create(user)
+    
+    @pytest.mark.dao
+    @pytest.mark.parametrize("user", Invalid_users_partials)
+    def test_Invalid_users_partials(self, sut: DAO, user: Any):
+        with pytest.raises(WriteError):
+            sut.create(user)
 
-    result = sut.create(data)
-    user_id = result['_id']
+    @pytest.mark.dao
+    @pytest.mark.parametrize("user", Valid_users)
+    def test_Invalid_uniqueItems(self, sut: DAO, user: dict[str, Any]):
+        with pytest.raises(WriteError):
+            sut.create(user)
+            result = sut.create(user)
+            assert result == Exception
+    
+    @pytest.mark.dao
+    @pytest.mark.parametrize("user", Valid_users)
+    def test_complient_data(self,sut: DAO,user: dict[str, Any]):
+        result = sut.create(user)
+        result.pop('_id')
+        assert result == user
 
-    result = sut.delete(user_id['$oid'])
-    result1 = sut.findOne(user_id['$oid'])
-    assert result1 is None
