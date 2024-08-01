@@ -25,8 +25,8 @@ class TestUserController:
                 'email': 'john123@example.com'
             },
             {
-                'firstName': 'John', 
-                'lastName': 'Doe',
+                'firstName': 'John2', 
+                'lastName': 'Doe2',
                 'email': 'john123@example.com'
             }
         ]
