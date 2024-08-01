@@ -18,13 +18,27 @@ class TestIntegrated:
             "firstName": "Joe",
             "lastName": "Bloggs",
             "email": "joe@bloggs.com",
-            "tasks": []
+            "tasks": [1,2]
         },
         {
             "firstName": "John",
             "lastName": "Doe",
             "email": "john@doe.com",
-            "tasks": []
+            "tasks": [1,2]
+        }
+    ]
+    Invalid_uniqueItems = [
+                {
+            "firstName": "Joe",
+            "lastName": "Bloggs",
+            "email": "joe@bloggs.com",
+            "tasks": [1,1]
+        },
+        {
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john@doe.com",
+            "tasks": [1,1]
         }
     ]
     Invalid_users_partials = [
@@ -77,42 +91,15 @@ class TestIntegrated:
         Yields:
             DAO:  mocked getValidation
         """
-        validator = json.loads('{' \
-                '"$jsonSchema": {'\
-                    '"bsonType": "object",'\
-                    '"required": ["firstName", "lastName", "email"],'\
-                    '"properties": {'\
-                        '"firstName": {'\
-                            '"bsonType": "string",'\
-                            '"description": "the first name of a user must be determined"'\
-                        '}, '\
-                        '"lastName": {'\
-                            '"bsonType": "string",'\
-                            '"description": "the last name of a user must be determined",'\
-                            '"uniqueItems": true'\
-                        '},'\
-                        '"email": {'\
-                            '"bsonType": "string",'\
-                            '"description": "the email address of a user must be determined",'\
-                            '"uniqueItems": true'\
-                        '},'\
-                        '"tasks": {'\
-                            '"bsonType": "array",'\
-                            '"items": {'\
-                                '"bsonType": "objectId"'\
-                            '}'\
-                        '}'\
-                    '}'\
-                '}'\
-            '}')
+        with open ('./test.json', 'r') as f:
+            validator = json.load(f)
         with patch('src.util.dao.getValidator', autospec=True) as mock_getValdator:
             mock_getValdator.return_value = validator
             sut = DAO("test")
         client = MongoClient('localhost', 27017)
         db = client['edutask']
         yield sut
-        db['test'].drop()
-    
+        sut.collection.drop()
 
     @pytest.mark.dao
     @pytest.mark.parametrize("user", Invalid_Data_Types)
@@ -127,12 +114,10 @@ class TestIntegrated:
             sut.create(user)
 
     @pytest.mark.dao
-    @pytest.mark.parametrize("user", Valid_users)
+    @pytest.mark.parametrize("user", Invalid_uniqueItems)
     def test_Invalid_uniqueItems(self, sut: DAO, user: dict[str, Any]):
         with pytest.raises(WriteError):
             sut.create(user)
-            result = sut.create(user)
-            assert result == Exception
     
     @pytest.mark.dao
     @pytest.mark.parametrize("user", Valid_users)
