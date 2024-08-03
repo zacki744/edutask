@@ -66,11 +66,15 @@ class TestUserController:
     @pytest.mark.unit
     @pytest.mark.parametrize('invalid_email',
         [
-            ('janedoeemail.com'),
+            ('jane'),
+            ('jane@'),
+            ('jane@mail'),
+            ('jane@mail.'),
+            ('@mail.com'),
             ('.com'),
-            ('invallid'),
-            ('jane.doeemail'),
-            (''),
+            ('jane@.com'),
+            ('jane@mail'),
+            ('jane@mail.'),
         ])
     def test_get_user_by_email_invalid(self, sut, invalid_email):
         with pytest.raises(ValueError), patch('src.controllers.usercontroller.re.fullmatch') as mock_re:
@@ -80,11 +84,8 @@ class TestUserController:
 
     @pytest.mark.unit
     def test_get_user_by_email_no_user(self, sut_no_user):
-        email = 'nonexistent@example.com'
-
-        with pytest.raises(IndexError), patch('src.controllers.usercontroller.re.fullmatch') as mock_re:
-            mock_re.return_value = True
-            sut_no_user.get_user_by_email(email)
+        email = 'nonexistent@gmail.com'
+        assert sut_no_user.get_user_by_email(email) == None
     
     @pytest.mark.unit
     def test_database_error(self, sut_exception):
