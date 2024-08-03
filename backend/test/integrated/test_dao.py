@@ -15,8 +15,8 @@ class TestIntegrated:
     """
     Valid_users = [
         {
-            "firstName": "Joe",
-            "lastName": "Bloggs",
+            "firstName": "Steven",
+            "lastName": "Anderson",
             "email": "joe@bloggs.com",
             "tasks": [1,2]
         },
@@ -28,9 +28,9 @@ class TestIntegrated:
         }
     ]
     Invalid_uniqueItems = [
-                {
-            "firstName": "Joe",
-            "lastName": "Bloggs",
+        {
+            "firstName": "Steven",
+            "lastName": "Anderson",
             "email": "joe@bloggs.com",
             "tasks": [1,1]
         },
@@ -43,7 +43,7 @@ class TestIntegrated:
     ]
     Invalid_users_partials = [
         {
-            "lastName": "Bloggs",
+            "lastName": "Doe",
             "email": "joe@bloggs.com",
             "tasks": []
         },
@@ -52,12 +52,16 @@ class TestIntegrated:
             "email": "joe@bloggs.com",
             "tasks": []
         },
-                {
-            "firstName": "Joe",
-            "lastName": "Bloggs",
+        {
+            "firstName": "Steven",
+            "lastName": "Anderson",
             "tasks": []
         },
-        {},
+        {
+            "firstName": "Steven",
+            "lastName": "Anderson",
+            "email": "joe@bloggs.com",
+        },
     ]
     Invalid_Data_Types = [
         {
@@ -68,20 +72,21 @@ class TestIntegrated:
         },
         {
             "firstName": "Joe",
-            "lastName": [],
+            "lastName": True,
             "email": "joe@bloggs.com",
             "tasks": []
         },
         {
-            "firstName": "Joe",
-            "lastName": "Bloggs",
-            "email": 123,
+            "firstName": "Steven",
+            "lastName": "Anderson",
+            "email": True,
             "tasks": []
         },
         {
-            "firstName": False,
-            "lastName": False,
-            "email": False
+            "firstName": "Steven",
+            "lastName": "Anderson",
+            "email": "joe@bloggs.com",
+            "tasks": True 
         }
     ]
     @pytest.fixture(scope="module")
@@ -93,8 +98,8 @@ class TestIntegrated:
         """
         with open ('./test.json', 'r') as f:
             validator = json.load(f)
-        with patch('src.util.dao.getValidator', autospec=True) as mock_getValdator:
-            mock_getValdator.return_value = validator
+        with patch('src.util.dao.getValidator', autospec=True) as mock_getValidator:
+            mock_getValidator.return_value = validator
             sut = DAO("test")
         client = MongoClient('localhost', 27017)
         db = client['edutask']
@@ -103,25 +108,25 @@ class TestIntegrated:
 
     @pytest.mark.dao
     @pytest.mark.parametrize("user", Invalid_Data_Types)
-    def test_Invalid_Data_Types(self, sut: DAO, user: Any):
+    def test_invalid_Data_Types(self, sut: DAO, user: Any):
         with pytest.raises(WriteError):
             sut.create(user)
     
     @pytest.mark.dao
     @pytest.mark.parametrize("user", Invalid_users_partials)
-    def test_Invalid_users_partials(self, sut: DAO, user: Any):
+    def test_invalid_users_partials(self, sut: DAO, user: Any):
         with pytest.raises(WriteError):
             sut.create(user)
 
     @pytest.mark.dao
     @pytest.mark.parametrize("user", Invalid_uniqueItems)
-    def test_Invalid_uniqueItems(self, sut: DAO, user: dict[str, Any]):
+    def test_invalid_unique_items(self, sut: DAO, user: dict[str, Any]):
         with pytest.raises(WriteError):
             sut.create(user)
     
     @pytest.mark.dao
     @pytest.mark.parametrize("user", Valid_users)
-    def test_complient_data(self,sut: DAO,user: dict[str, Any]):
+    def test_compliant_data(self,sut: DAO,user: dict[str, Any]):
         result = sut.create(user)
         result.pop('_id')
         assert result == user
