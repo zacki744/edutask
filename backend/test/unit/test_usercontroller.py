@@ -70,11 +70,10 @@ class TestUserController:
             ('jane@'),
             ('jane@mail'),
             ('jane@mail.'),
+            ('jane@mailcom'),
             ('@mail.com'),
-            ('.com'),
             ('jane@.com'),
-            ('jane@mail'),
-            ('jane@mail.'),
+            ('.com'),
         ])
     def test_get_user_by_email_invalid(self, sut, invalid_email):
         with pytest.raises(ValueError), patch('src.controllers.usercontroller.re.fullmatch') as mock_re:
