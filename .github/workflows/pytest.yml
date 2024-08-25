@@ -2,9 +2,9 @@ name: Python application test
 
 on:
   push:
-    branches: [master]
+    branches: [master, Bug_Fix_userController]
   pull_request:
-    branches: [master]
+    branches: [master, Bug_Fix_userController]
   workflow_dispatch:
 
 jobs:
