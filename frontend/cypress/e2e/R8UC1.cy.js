@@ -3,9 +3,9 @@ describe('Test cases for R8UC1', () => {
   let uid;
   let email;
   let task_id;
-
+  let todo_id;
   // Before hook to create a user and login before each test
-  before(() => {
+  before(function() {
     cy.fixture('user.json').then((user) => {
       // Create a user
       cy.request({
@@ -18,23 +18,25 @@ describe('Test cases for R8UC1', () => {
         email = user.email;
       });
     });
-  });
-
-  // Before each hook to login before each test
-  beforeEach(() => {
     cy.fixture("NewTask.json")
     .then(task => {
-      task.userid = uid,
       cy.request({
         method: "POST",
         url: "http://localhost:5000/tasks/create",
         form: true,
-        body: task
+        body: {
+          ...task,
+          "userid": uid
+        }
       }).then(response => {
-        console.log("TID", response.body)
         task_id = response.body[0]._id.$oid
+        todo_id = response.body[0].todos[0]._id.$oid;
       })
     })
+  });
+  // Before each hook to login before each test
+  beforeEach(function(){
+    cy.viewport(550, 750) // stuff just somtimes gets outside of the screan
     cy.visit('http://localhost:3000');
     cy.contains('div', 'Email Address').find('input[type=text]').type(email);
     cy.get('form').submit();
@@ -59,20 +61,11 @@ describe('Test cases for R8UC1', () => {
   // Test case 2: should not create a new todo item when an empty description is entered and the "Add" button is clicked
   it('Test case 2: should not create a new todo item when an empty description is entered and the "Add" button is clicked', () => {
     // Click on the task to open it
-    cy.get('.inline-form input[type="text"]').clear({ force: true });
-    cy.get('.inline-form input[value="Add"]').should('be.disabled');
+    cy.get('.inline-form input[type="text"]').clear({ force: true })
+     .get('.inline-form input[value="Add"]').should('be.disabled');
   });
 
-  afterEach(() => {
-    cy.request({
-      method: 'DELETE',
-      url: `http://localhost:5000/tasks/${task_id}`
-    }).then((response) => {
-      cy.log(response.body)
-    })
-  });
-
-  after(function () {
+  after( () => {
     cy.request({
       method: 'DELETE',
       url: `http://localhost:5000/users/${uid}`
@@ -80,4 +73,4 @@ describe('Test cases for R8UC1', () => {
       cy.log(response.body)
     })
   })
-})
+});

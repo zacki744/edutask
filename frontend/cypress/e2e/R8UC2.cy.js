@@ -1,11 +1,11 @@
 describe('Test cases for R8UC2', () => {
+  // Variables to store user information
   let uid;
   let email;
   let task_id;
   let todo_id;
-
   // Before hook to create a user and login before each test
-  before(() => {
+  before(function() {
     cy.fixture('user.json').then((user) => {
       // Create a user
       cy.request({
@@ -18,25 +18,27 @@ describe('Test cases for R8UC2', () => {
         email = user.email;
       });
     });
-    cy.fixture("NewTask.json").then(task => {
-      task.userid = uid;
+    cy.fixture("NewTask.json")
+    .then(task => {
       cy.request({
         method: "POST",
         url: "http://localhost:5000/tasks/create",
         form: true,
-        body: task
+        body: {
+          ...task,
+          "userid": uid
+        }
       }).then(response => {
-        task_id = response.body[0]._id.$oid;
+        task_id = response.body[0]._id.$oid
         todo_id = response.body[0].todos[0]._id.$oid;
-      });
-    });
+      })
+    })
   });
-  beforeEach(function() {
+  // Before each hook to login before each test
+  beforeEach(function(){
     cy.visit('http://localhost:3000');
     cy.contains('div', 'Email Address').find('input[type=text]').type(email);
     cy.get('form').submit();
-    cy.get('.title-overlay').last().click();
-    cy.wait(2000);
   });
 
   // Test case 1: Verify that a todo item can be marked as done when the user clicks on the checkbox icon
@@ -50,7 +52,9 @@ describe('Test cases for R8UC2', () => {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
-
+    cy.wait(2000);
+    cy.get('.title-overlay').last().click();
+    cy.wait(2000);
     cy.get('.todo-list .todo-item')
       .eq(0)
       .find('[class^=checker]')
@@ -74,6 +78,9 @@ describe('Test cases for R8UC2', () => {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
+    cy.wait(2000);
+    cy.get('.title-overlay').last().click();
+    cy.wait(2000);
 
     cy.get('.todo-list .todo-item')
       .eq(0)
@@ -86,6 +93,7 @@ describe('Test cases for R8UC2', () => {
       .find('[class^=checker]')
       .should('have.class', 'unchecked');
   });
+
   after(function () {
     cy.request({
       method: 'DELETE',
